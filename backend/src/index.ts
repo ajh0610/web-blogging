@@ -2,14 +2,41 @@ import { Hono } from 'hono'
 import { PrismaClient } from '@prisma/client/edge'
 import { withAccelerate } from '@prisma/extension-accelerate'
 import { configDotenv } from 'dotenv'
-import { jwt, sign } from 'hono/jwt'
+import { jwt, sign , verify, decode} from 'hono/jwt'
 
 const app = new Hono<{
+  Variables: {
+    userId: string
+  },
 	Bindings: {
 		DATABASE_URL: string
     JWT_SECRET: string
-	}
+	},
 }>();
+
+
+//Middlewares
+
+app.use('/api/v1/blog/*', async (c, next)=>{
+
+  const jwt = c.req.header('Authorization');
+  if(!jwt){
+    c.status(401);
+    return c.json({error: 'Unauthorized entry!'});
+  }
+  const token = jwt.split(' ')[1];
+  const decodedJWT = await verify(token, c.env.JWT_SECRET);
+
+  if(!decodedJWT){
+    c.status(403);
+    return c.json({error: 'Unauthorized entry!'})
+  }
+
+  console.log(decodedJWT);
+
+  c.set('userId', String(decodedJWT.id))
+  await next();
+})
 
 app.post('/api/v1/user/signup', async (c) => {
   const prisma = new PrismaClient({
@@ -78,6 +105,7 @@ app.post('/api/v1/user/signin', async (c) => {
 })
 
 app.post('/api/v1/blog', (c) => {
+  console.log(c.get('userId'))
   
   return c.text('posting blog!')
 })
