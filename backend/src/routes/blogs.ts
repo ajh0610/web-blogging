@@ -1,8 +1,7 @@
 import { Hono } from 'hono'
 import { PrismaClient } from '@prisma/client/edge'
 import { withAccelerate } from '@prisma/extension-accelerate'
-import { configDotenv } from 'dotenv'
-import { jwt, sign , verify, decode} from 'hono/jwt'
+import { sign , verify, decode} from 'hono/jwt'
 
 const blogRouter = new Hono<{
   Variables: {

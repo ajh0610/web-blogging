@@ -12,15 +12,22 @@ const userRouter = new Hono<{
 
 
 userRouter.post('/signup', async (c) => {
+  // Connecting to the prisma client
   const prisma = new PrismaClient({
     datasourceUrl: c.env?.DATABASE_URL
   }).$extends(withAccelerate());
+
+  // Fetching the body
   const body = await c.req.json();
+
+  //Validation for the body
   if(!body.email || !body.password){
     c.status(403);
     return c.json({error: 'Error while sigining in incorrect parameters'})
   }
   try{
+
+    // creating a new user
     const user = await prisma.user.create({
       data:{
         email: body.email,
@@ -28,6 +35,8 @@ userRouter.post('/signup', async (c) => {
         
       }
     })
+
+    //maybe jwt lib doesn't work well with cloud flare workers thats why we used jwt from the hono library
     const jwt = await sign({id: user.id, email: body.email}, c.env.JWT_SECRET)
     return c.json({jwt})
   }
@@ -74,8 +83,7 @@ userRouter.post('/signin', async (c) => {
      c.status(403)
      return c.json({error: 'Error while sigining in!'})
   }
-  
 })
 
 
-export default userRouter
+export default userRouter;
